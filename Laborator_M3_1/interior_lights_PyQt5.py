@@ -357,18 +357,43 @@ class Ui_MainWindow(object):
     ############################### EXERCISE 3 ###############################
     # Change progress bar value when spinbox value is changed
     def valuechange(self):
-        pass
-        ''' complete with necesarry code '''
+        global progress_bar_value
+
+        target_value = self.spinBox.value()
+        progress_bar_value = self.progress_bar.value()
+
+        if target_value < progress_bar_value:
+            for value in range(progress_bar_value - 1, target_value - 1, -1):
+                self.change_pb_down_value(value)
+        elif target_value > progress_bar_value:
+            for value in range(progress_bar_value + 1, target_value + 1):
+                self.change_pb_up_value(value)
 
     # Change led brightness down when the spinbox value (representing led brightness percentage) is less than progress bar value
     def change_pb_down_value(self, value):
-        pass
-        ''' complete with necesarry code '''
+        global progress_bar_value
+
+        progress_bar_value = value
+        self.progress_bar.setValue(value)
+
+        # Permite interfeței să afișeze fiecare pas
+        QtWidgets.QApplication.processEvents()
+
+        # Mică pauză pentru a vedea efectul de fade
+        time.sleep(0.02)
 
     # Change led brightness up when the spinbox value (representing led brightness percentage) is bigger than progress bar value
     def change_pb_up_value(self, value):
-        pass
-        ''' complete with necesarry code '''
+        global progress_bar_value
+
+        progress_bar_value = value
+        self.progress_bar.setValue(value)
+
+        # Permite interfeței să afișeze fiecare pas
+        QtWidgets.QApplication.processEvents()
+
+        # Mică pauză pentru a vedea efectul de fade
+        time.sleep(0.02)
 
     ############################### EXERCISE 4 ###############################
     # Succesice KL led turn
