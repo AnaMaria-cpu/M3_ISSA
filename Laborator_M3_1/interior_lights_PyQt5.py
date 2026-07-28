@@ -30,8 +30,9 @@ class MyThread_sweep(QThread):
     sweepLedsSignal = pyqtSignal(int)
 
     def run(self):
-        pass
-        ''' complete with necesarry code '''
+        for led_number in range(4):
+            self.sweepLedsSignal.emit(led_number)
+            time.sleep(0.5)
 
 
 ############################### EXERCISE 5 #################################
@@ -331,8 +332,20 @@ class Ui_MainWindow(object):
 
     # Sweep Leds function
     def sweep_leds(self, val):
-        pass
-        ''' complete with necesarry code '''
+        on = "green"
+        off = "transparent"
+
+        if val == 0:
+            self.set4leds(on, off, off, off)
+
+        elif val == 1:
+            self.set4leds(off, on, off, off)
+
+        elif val == 2:
+            self.set4leds(off, off, on, off)
+
+        elif val == 3:
+            self.set4leds(off, off, off, on)
 
     # Sweep Leds
     def set4leds(self, led1, led2, led3, led4):
