@@ -398,23 +398,70 @@ class Ui_MainWindow(object):
     ############################### EXERCISE 4 ###############################
     # Succesice KL led turn
     def KL_lights(self, KL):
-        pass
-        ''' complete with necesarry code '''
+        off = "transparent"
+
+        if KL == "no_KL":
+            self.set_bg_colors(off, off, off, off)
+
+        elif KL == "KL_s":
+            self.set_bg_colors("grey", off, off, off)
+
+        elif KL == "KL_15":
+            self.set_bg_colors("grey", "green", off, off)
+
+        elif KL == "KL_50":
+            self.set_bg_colors("grey", "green", "red", off)
+
+        elif KL == "KL_75":
+            self.set_bg_colors("grey", "green", "red", "blue")
 
     # Set previous value for KL when previous KL button is pressed
     def prev_kl_function(self):
-        pass
-        ''' complete with necesarry code '''
+        global KL_position
+
+        if KL_position > 0:
+            KL_position -= 1
+
+        current_kl = KL_list[KL_position]
+
+        self.current_kl_label.setText("Current KL: " + current_kl)
+        self.KL_lights(current_kl)
+        self.set_enable()
 
     # Set next value for KL when next KL button is pressed
     def next_kl_function(self):
-        pass
-        ''' complete with necesarry code '''
+        global KL_position
+
+        if KL_position < len(KL_list) - 1:
+            KL_position += 1
+
+        current_kl = KL_list[KL_position]
+
+        self.current_kl_label.setText("Current KL: " + current_kl)
+        self.KL_lights(current_kl)
+        self.set_enable()
 
     # Set enable KL buttons
     def set_enable(self):
-        pass
-        ''' complete with necesarry code '''
+        global KL_position
+
+        # Butonul Previous este dezactivat la primul element
+        self.prev_kl.setEnabled(KL_position > 0)
+
+        # Butonul Next este dezactivat la ultimul element
+        self.next_kl.setEnabled(KL_position < len(KL_list) - 1)
+
+        # Afișăm KL-ul anterior
+        if KL_position > 0:
+            self.prev_kl_label.setText(KL_list[KL_position - 1])
+        else:
+            self.prev_kl_label.setText("")
+
+        # Afișăm KL-ul următor
+        if KL_position < len(KL_list) - 1:
+            self.next_kl_label.setText(KL_list[KL_position + 1])
+        else:
+            self.next_kl_label.setText("")
 
     # Set KL leds colors
     def set_bg_colors(self, l1, l2, l3, l4):
