@@ -280,8 +280,34 @@ class Ui_MainWindow(object):
     ############################### EXERCISE 1 ###############################
     # Clear all leds and widgtets when the Close all leds is pressed
     def close_all_leds(self):
-        pass
-        ''' complete with necesarry code '''
+        global interiorLed
+        global progress_bar_value
+        global warning
+        global KL_position
+
+        interiorLed = False
+        progress_bar_value = 0
+        warning = False
+        KL_position = 0
+
+        off = "transparent"
+
+        self.interior_light_led(off)
+        self.set4leds(off, off, off, off)
+        self.set_bg_colors(off, off, off, off)
+        self.setWarningLights(off, off, off, off)
+
+        # Resetăm controlul pentru luminozitate
+        self.progress_bar.setValue(0)
+        self.spinBox.setValue(0)
+
+        # Resetăm afișarea KL
+        self.current_kl_label.setText("Current KL: no_KL")
+        self.prev_kl_label.setText("")
+        self.next_kl_label.setText("KL_s")
+
+        self.prev_kl.setEnabled(False)
+        self.next_kl.setEnabled(True)
 
     # Open one led when interior lights is pressed
     def interior_light_led(self, b1):
@@ -289,8 +315,12 @@ class Ui_MainWindow(object):
 
     # Function called from button handler
     def set_interior_lights(self):
-        pass
-        ''' complete with necesarry code '''
+        global interiorLed
+        interiorLed = not interiorLed
+        if interiorLed:
+            self.interior_light_led("green")
+        else:
+            self.interior_light_led("transparent")
 
     ############################### EXERCISE 2 ###############################
     # Sweep Leds thread
