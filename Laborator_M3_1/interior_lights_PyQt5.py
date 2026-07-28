@@ -40,8 +40,21 @@ class MyThread_warning(QThread):
     warningLightsSignal = pyqtSignal(int)
 
     def run(self):
-        pass
-        ''' complete with necesarry code '''
+        global warning
+
+        led_state = 0
+
+        # Cât timp warning este True, LED-urile clipesc
+        while warning:
+            # 0 devine 1, iar 1 devine 0
+            led_state = 1 - led_state
+
+            # Trimitem starea către interfață
+            self.warningLightsSignal.emit(led_state)
+
+            # Pauză de 500 ms între aprins și stins
+            self.msleep(500)
+
 
 
 class Ui_MainWindow(object):
@@ -482,15 +495,43 @@ class Ui_MainWindow(object):
     ############################### EXERCISE 5 ##############################
     # Warning lights thread
     def warningLightsButton(self):
-        ''' complete with necesarry code '''
-        self.thread_warning = MyThread_warning()
-        self.thread_warning.warningLightsSignal.connect(self.whileLights)
-        self.thread_warning.start()
+        global warning
+        global leftWarningVar
+        global rightWarningVar
+        
+        # Prima apăsare: pornim Warning Lights
+        if warning is False:
+            warning = True
+
+            # Salvăm starea semnalizărilor înainte de avarii
+            self.saved_left_warning = leftWarningVar
+            self.saved_right_warning = rightWarningVar
+
+            # Oprim temporar semnalizările normale
+            leftWarningVar = False
+            rightWarningVar = False
+
+            # Schimbăm textul butonului
+            self.warning.setText("Stop Warning Lights")
+
+            self.thread_warning = MyThread_warning()
+            self.thread_warning.warningLightsSignal.connect(self.whileLights)
+            self.thread_warning.start()
+        else:
+            warning = False
+            self.warning.setText("Warning Lights")
+
 
     # Warning Lights function
     def whileLights(self, val):
-        pass
-        ''' complete with necesarry code '''
+        on = "orange"
+        off = "transparent"
+
+        if val == 1:
+            self.setWarningLights(on, on, on, on)
+
+        else:
+            self.setWarningLights(off, off, off, off)
 
     ############################### EXERCISE 6 ##############################
     ################################ BONUS ################################
