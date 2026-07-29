@@ -172,6 +172,9 @@ class Ui_MainWindow(object):
             # Transformăm cheile în bytes și le trimitem clientului
             server.sendall(cPickle.dumps(keys))
 
+            # Pornim threadul care va asculta mesajele clientului
+            self.recv_messages()
+
             # Actualizăm interfața după conectare
             self.server_label.setText("Client connected")
             self.key.setEnabled(True)
@@ -187,16 +190,28 @@ class Ui_MainWindow(object):
 
 ############################### EXERCISE 6 ###############################   
     def send_key_data(self):
-       pass
-       ''' complete with necesarry code '''
+        global server
+        global public_key
 
-       
-       #Uncomment the following 3 lines after this exercise is completed
-       '''
-       self.dashboard_label.setVisible(True)
-       self.unlock.setVisible(False)
-       self.key.setVisible(False)
-       '''
+        # Criptăm comanda de deblocare folosind cheia publică
+        encrypted_unlock_car = rsa_library.encrypt(
+            public_key,
+            unlockCar
+        )
+
+        # Transformăm numărul criptat în bytes și îl trimitem clientului
+        server.sendall(
+            cPickle.dumps(encrypted_unlock_car)
+        )
+
+        print("Unlock command sent")
+        print("Original message:", hex(unlockCar))
+        print("Encrypted message:", encrypted_unlock_car)
+
+        # După apăsarea cheii, afișăm dashboard-ul
+        self.dashboard_label.setVisible(True)
+        self.unlock.setVisible(False)
+        self.key.setVisible(False)
 
 ############################### EXERCISE 7 ###############################   
     def recv_messages(self):
@@ -207,8 +222,80 @@ class Ui_MainWindow(object):
     def recv_messages_handler(self,stop_event):
         global server_created_flag
         global stop_thread
-        while server_created_flag and not stop_event.isSet() and stop_thread == False:
-            ''' complete with necesarry code '''
+        global flag
+        global flag_low
+        global server
+        global private_key
+
+        while (
+                server_created_flag
+                and not stop_event.is_set()
+                and stop_thread == False
+        ):
+            try:
+                # Primim mesajul criptat de la client
+                received_data = server.recv(4096)
+
+                # Dacă nu mai primim date, clientul s-a deconectat
+                if not received_data:
+                    print("Client disconnected")
+                    server_created_flag = False
+                    break
+
+                # Transformăm bytes înapoi într-un obiect Python
+                encrypted_message = cPickle.loads(received_data)
+
+                # Decriptăm mesajul folosind cheia privată
+                decrypted_message = rsa_library.decrypt(
+                    private_key,
+                    encrypted_message
+                )
+
+                print("Encrypted message received:", encrypted_message)
+                print("Decrypted message:", hex(decrypted_message))
+
+                # Verificăm dacă LOW este 0x01
+                flag_low = rsa_library.low_check(decrypted_message)
+
+                # Verificăm dacă HIGH este complementul lui LOW
+                flag = rsa_library.number_check(decrypted_message)
+
+                print("LOW check:", flag_low)
+                print("HIGH check:", flag)
+
+                # LOW invalid are prioritate
+                if flag_low == False:
+                    response = "Low corruption"
+
+                # LOW este bun, dar HIGH este invalid
+                elif flag == False:
+                    response = "High corruption"
+
+                # Ambele condiții sunt corecte
+                else:
+                    response = "Airbag on"
+
+                # Trimitem rezultatul înapoi clientului
+                server.sendall(cPickle.dumps(response))
+
+                print("Response sent:", response)
+
+            except (
+                    ConnectionResetError,
+                    ConnectionAbortedError,
+                    OSError
+            ) as error:
+                print("Connection error:", error)
+                server_created_flag = False
+                break
+
+            except (
+                    cPickle.UnpicklingError,
+                    EOFError,
+                    TypeError,
+                    ValueError
+            ) as error:
+                print("Invalid received data:", error)
 
 
 ##############################################################     
@@ -233,8 +320,8 @@ class Ui_MainWindow(object):
                 self.airbag_label.setVisible(False)
                 self.ecu_defect_label.setVisible(True)
                 self.ecu_defect_label.setText('  ECU\nDefect')
-            
-    
+
+            time.sleep(0.05)
         
 class MyWindow(QtWidgets.QMainWindow):
     def closeEvent(self,event):

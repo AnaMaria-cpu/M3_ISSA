@@ -137,6 +137,9 @@ class Ui_MainWindow(object):
             self.connected_label.setText("Connected to server")
             self.client_start.setEnabled(False)
 
+            # Ascultăm mesajele trimise ulterior de server
+            self.recv_messages()
+
         except ConnectionRefusedError:
             self.connected_label.setText("Server not started")
             print("Connection refused. Start the server first.")
@@ -154,22 +157,156 @@ class Ui_MainWindow(object):
 
     def recv_handler(self,stop_event):
         global stop_thread
-        while not stop_event.isSet() and stop_thread == False:
-            ''' complete with necesarry code '''
+        global client
+        global private_key
+
+        while not stop_event.is_set() and not stop_thread :
+            try:
+                # Așteptăm date de la server
+                received_data = client.recv(4096)
+
+                # Dacă nu mai sunt date, serverul s-a deconectat
+                if not received_data:
+                    print("Server disconnected")
+                    self.connected_label.setText("Server disconnected")
+                    break
+
+                # Transformăm datele primite din bytes în obiect Python
+                received_message = cPickle.loads(received_data)
+
+                print("Message received from server:", received_message)
+
+                # Mesajele de tip int sunt comenzi RSA criptate
+                if isinstance(received_message, int):
+                    decrypted_message = rsa_library.decrypt(
+                        private_key,
+                        received_message
+                    )
+
+                    print(
+                        "Decrypted server message:",
+                        hex(decrypted_message)
+                    )
+
+                    # Comanda 0xfd02 înseamnă deblocarea mașinii
+                    if decrypted_message == 0xfd02:
+                        self.airbag.setEnabled(True)
+                        self.corrupted_low.setEnabled(True)
+                        self.corrupted_high.setEnabled(True)
+
+                        self.connected_label.setText("Car unlocked")
+
+                # Răspuns pentru comanda Airbag on
+                elif received_message == "Airbag on":
+                    self.airbag_on_label.setText("Airbag is on")
+
+                # Răspuns pentru LOW invalid
+                elif received_message == "Low corruption":
+                    self.corrupted_low_label.setText("Low corruption")
+
+                # Răspuns pentru HIGH invalid
+                elif received_message == "High corruption":
+                    self.corrupted_high_label.setText("High corruption")
+
+                else:
+                    print("Unknown server response:", received_message)
+
+            except (
+                    ConnectionResetError,
+                    ConnectionAbortedError,
+                    OSError
+            ) as error:
+                print("Connection error:", error)
+                self.connected_label.setText("Connection lost")
+                break
+
+            except (
+                    cPickle.UnpicklingError,
+                    EOFError,
+                    TypeError,
+                    ValueError
+            ) as error:
+                print("Invalid data received:", error)
 
 ############################### EXERCISE 9 ###############################              
     def send_on_data(self):
-        pass
-        ''' complete with necesarry code '''
+        global client
+        global public_key
+
+        try:
+            # Criptăm valoarea 0xfe01
+            encrypted_message = rsa_library.encrypt(
+                public_key,
+                airbag_on
+            )
+
+            # Trimitem numărul criptat serverului
+            client.sendall(
+                cPickle.dumps(encrypted_message)
+            )
+
+            self.airbag_on_label.setText("Waiting...")
+
+            print("Airbag command sent")
+            print("Original:", hex(airbag_on))
+            print("Encrypted:", encrypted_message)
+
+        except OSError as error:
+            self.airbag_on_label.setText("Send error")
+            print("Error sending Airbag command:", error)
 ############################### EXERCISE 10 ###############################     
     def send_corrupted_low(self):
-        pass
-        ''' complete with necesarry code '''
+        global client
+        global public_key
+
+        try:
+            # Criptăm valoarea coruptă în partea LOW
+            encrypted_message = rsa_library.encrypt(
+                public_key,
+                corrupted_low
+            )
+
+            # Trimitem numărul criptat serverului
+            client.sendall(
+                cPickle.dumps(encrypted_message)
+            )
+
+            self.corrupted_low_label.setText("Waiting...")
+
+            print("Corrupted LOW command sent")
+            print("Original:", hex(corrupted_low))
+            print("Encrypted:", encrypted_message)
+
+        except OSError as error:
+            self.corrupted_low_label.setText("Send error")
+            print("Error sending corrupted LOW:", error)
 
 ############################### EXERCISE 11 ###############################      
     def send_corrupted_high(self):
-        pass
-        ''' complete with necesarry code '''
+        global client
+        global public_key
+
+        try:
+            # Criptăm valoarea coruptă în partea HIGH
+            encrypted_message = rsa_library.encrypt(
+                public_key,
+                corrupted_high
+            )
+
+            # Trimitem numărul criptat serverului
+            client.sendall(
+                cPickle.dumps(encrypted_message)
+            )
+
+            self.corrupted_high_label.setText("Waiting...")
+
+            print("Corrupted HIGH command sent")
+            print("Original:", hex(corrupted_high))
+            print("Encrypted:", encrypted_message)
+
+        except OSError as error:
+            self.corrupted_high_label.setText("Send error")
+            print("Error sending corrupted HIGH:", error)
       
         
 def kill_proc_tree(pid, including_parent=True):    
