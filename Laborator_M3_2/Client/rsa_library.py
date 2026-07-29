@@ -87,20 +87,32 @@ def generate_keypair(p, q):
     return ((e, modulus), (d, modulus))
 ############################### EXERCISE 1 ###############################
 def encrypt(public_key, hex_number):
-    pass
-    ''' complete with necesarry code '''
+    e, modulus = public_key
+
+    encrypted_number = pow(hex_number, e, modulus)
+
+    return encrypted_number
 
 ############################### EXERCISE 2 ###############################
 def decrypt(private_key, encrypted_msg):
-    pass
-    ''' complete with necesarry code '''
+    d, modulus = private_key
+
+    decrypted_number = pow(encrypted_msg, d, modulus)
+
+    return decrypted_number
 
 ############################### EXERCISE 3 ###############################
 def low_check(hex_nr):
-    pass
-    ''' complete with necesarry code '''
+    low = hex_nr & 0xFF
+
+    return low == int(ON_low, 16)
 
 ############################### EXERCISE 4 ###############################
 def number_check(hex_nr):
-    pass
-    ''' complete with necesarry code '''
+    low = hex_nr & 0xFF
+    high = (hex_nr >> 8) & 0xFF
+
+    expected_high = (~low) & 0xFF
+
+    return high == expected_high
+

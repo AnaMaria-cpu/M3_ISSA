@@ -102,13 +102,48 @@ class Ui_MainWindow(object):
 
 ############################### EXERCISE 5 ###############################
     def start_client(self):
-      self.corrupted_low_label.clear()
-      self.airbag_on_label.clear()
-      self.corrupted_high_label.clear()
-      self.airbag.setEnabled(False)
-      self.corrupted_high.setEnabled(False)
-      self.corrupted_low.setEnabled(False)
-      ''' complete with necesarry code '''
+        global client
+        global public_key
+        global private_key
+
+        self.corrupted_low_label.clear()
+        self.airbag_on_label.clear()
+        self.corrupted_high_label.clear()
+
+        self.airbag.setEnabled(False)
+        self.corrupted_high.setEnabled(False)
+        self.corrupted_low.setEnabled(False)
+
+        try:
+            # Creăm socketul TCP al clientului
+            client = socket.socket(
+                socket.AF_INET,
+                socket.SOCK_STREAM
+            )
+
+            # Ne conectăm la server
+            client.connect((HOST, PORT))
+
+            # Primim cheile RSA trimise de server
+            received_data = client.recv(4096)
+
+            # Transformăm bytes înapoi în obiect Python
+            public_key, private_key = cPickle.loads(received_data)
+
+            print("Client connected")
+            print("Public key received:", public_key)
+            print("Private key received:", private_key)
+
+            self.connected_label.setText("Connected to server")
+            self.client_start.setEnabled(False)
+
+        except ConnectionRefusedError:
+            self.connected_label.setText("Server not started")
+            print("Connection refused. Start the server first.")
+
+        except Exception as error:
+            self.connected_label.setText("Connection error")
+            print("Client error:", error)
 
           
 ############################### EXERCISE 8 ###############################

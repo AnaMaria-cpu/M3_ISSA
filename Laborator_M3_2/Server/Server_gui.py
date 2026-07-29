@@ -17,6 +17,14 @@ flag_low = 0
 
 unlockCar = 0xfd02
 
+server_socket = None
+server = None
+
+public_key = None
+private_key = None
+
+server_created_flag = False
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         global server
@@ -94,14 +102,88 @@ class Ui_MainWindow(object):
     
 ############################### EXERCISE 5 ###############################
     def start_server(self):
-      self.key.setEnabled(True)
-      self.airbag_label.setVisible(False)
-      self.ecu_defect_label.clear()
-      self.dashboard_label.setVisible(False)
-      self.key.setVisible(True)
-      self.unlock.setVisible(True)
-      self.images()
-      "Complete with the necesarry code"    
+        global server
+        global public_key
+        global private_key
+        global server_created_flag
+
+        # Resetarea interfeței
+        self.key.setEnabled(False)
+        self.airbag_label.setVisible(False)
+        self.ecu_defect_label.clear()
+        self.ecu_defect_label.setVisible(False)
+        self.dashboard_label.setVisible(False)
+        self.key.setVisible(True)
+        self.unlock.setVisible(True)
+
+        # Pornim thread-ul care va actualiza imaginile
+        self.images()
+
+        # Informăm utilizatorul că serverul așteaptă clientul
+        self.server_label.setText("Waiting for client...")
+        self.server_start.setEnabled(False)
+
+        # Actualizează interfața înainte ca accept() să înceapă așteptarea
+        QtWidgets.QApplication.processEvents()
+
+        try:
+            # Creăm socketul TCP al serverului
+            server_socket = socket.socket(
+                socket.AF_INET,
+                socket.SOCK_STREAM
+            )
+
+            # Permite reutilizarea portului după repornirea aplicației
+            server_socket.setsockopt(
+                socket.SOL_SOCKET,
+                socket.SO_REUSEADDR,
+                1
+            )
+
+            # Asociem serverul cu adresa localhost și portul 12346
+            server_socket.bind((HOST, PORT))
+
+            # Serverul începe să asculte după un client
+            server_socket.listen(1)
+
+            print("Server started")
+            print("Waiting for client...")
+
+            # Programul așteaptă aici conectarea clientului
+            server, client_address = server_socket.accept()
+
+            print("Client connected:", client_address)
+
+            # Marcăm faptul că serverul este pornit și clientul este conectat
+            server_created_flag = True
+
+            # Generăm cheile RSA
+            public_key, private_key = rsa_library.generate_keypair(
+                277,
+                239
+            )
+
+            print("Public key:", public_key)
+            print("Private key:", private_key)
+
+            # Punem cele două chei într-un singur tuplu
+            keys = (public_key, private_key)
+
+            # Transformăm cheile în bytes și le trimitem clientului
+            server.sendall(cPickle.dumps(keys))
+
+            # Actualizăm interfața după conectare
+            self.server_label.setText("Client connected")
+            self.key.setEnabled(True)
+
+        except OSError as error:
+            print("Server error:", error)
+
+            server_created_flag = False
+
+            self.server_label.setText("Server error")
+            self.server_start.setEnabled(True)
+            self.key.setEnabled(False)
 
 ############################### EXERCISE 6 ###############################   
     def send_key_data(self):
